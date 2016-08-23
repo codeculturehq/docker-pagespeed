@@ -5,7 +5,6 @@ proxy_hide_header Expires;
 proxy_hide_header Last-Modified;
 proxy_hide_header Pragma;
 proxy_hide_header ETag;
-proxy_hide_header Set-Cookie;
 proxy_hide_header Cache-Control;
 proxy_hide_header Vary;
 add_header Cache-Control $custom_cache_control;

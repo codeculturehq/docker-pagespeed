@@ -1,5 +1,5 @@
 #
-# template file for nginx configuration. 
+# template file for nginx configuration.
 # Please note that the $ sign for nginx variables needs to be escaped as \$
 #
 resolver 8.8.8.8;
@@ -36,12 +36,12 @@ ${ALLOWED_DOMAINS}
 server {
 	listen 8080;
 	root /usr/share/nginx/html;
-	
-	
+
+
 	server_name ${SERVER_NAME} ${BACKEND} ${CDN} 127.0.0.1 localhost;
 	real_ip_header X-Forwarded-For;
 	real_ip_recursive on;
-	
+
 	# trusted ips used to determine the real ip
 	# loopback
 	set_real_ip_from 127.0.0.1;
@@ -53,12 +53,12 @@ ${NGINX_REAL_IP_FROM}
 
 	pagespeed ${PAGESPEED:-on};
 	pagespeed FileCachePath				"/var/cache/pagespeed/";
-	
+
 	# set cache size to one third the size of the available space
 	pagespeed FileCacheSizeKb			$((${DISK_PAGESPEED_MB} * 1024 / 3));
 	pagespeed FileCacheCleanIntervalMs	36000000;
 	pagespeed FileCacheInodeLimit		50000000;
-	
+
 	pagespeed LRUCacheKbPerProcess	 8192;
 	pagespeed LRUCacheByteLimit		16384;
 
@@ -71,31 +71,31 @@ ${NGINX_REAL_IP_FROM}
 	pagespeed LogDir /var/log/pagespeed;
 	pagespeed StatisticsLoggingIntervalMs 60000;
 	pagespeed StatisticsLoggingMaxFileSizeKb 1024000;
-	
+
 	# Ensure requests for pagespeed optimized resources go to the pagespeed handler
 	# and no extraneous headers get set.
 	location ~ "\.pagespeed\.([a-z]\.)?[a-z]{2}\.[^.]{10}\.[^.]+" {
 	  add_header "" "";
 	}
-	
+
 	location ~ "^/pagespeed_static/" { }
 	location ~ "^/ngx_pagespeed_beacon$" { }
 
 	pagespeed RewriteLevel ${REWRITE_LEVEL:-CoreFilters};
-	
+
 	pagespeed PreserveUrlRelativity on;
 	pagespeed InPlaceResourceOptimization on;
-	
+
 	pagespeed DisableRewriteOnNoTransform off;
 	pagespeed DomainRewriteHyperlinks on;
 	pagespeed InlineResourcesWithoutExplicitAuthorization Script,Stylesheet;
 
-	
+
 	pagespeed EnableFilters rewrite_domains;
 	pagespeed EnableFilters extend_cache;
 	pagespeed EnableFilters collapse_whitespace;
 	pagespeed ServeRewrittenWebpUrlsToAnyAgent off;
-	
+
 ${ENABLED_FILTERS}
 
 ${DISABLED_FILTERS}
@@ -112,12 +112,15 @@ ${CUSTOM_SETTINGS}
 	pagespeed MapRewriteDomain ${FRONTEND} ${BACKEND};
 
 ${MAP_BACKENDS}
-	
+
 ${MAP_PROXY_DOMAINS}
 
 ${MAP_PROXY_HTTPS_DOMAINS}
-	
+
 ${SHARD_DOMAINS}
+
+pagespeed Disallow "*/wp-admin/*";
+
 	location ~^/${RESIZE_PATH:_resize}/(?<width>[\d-]+)x(?<height>[\d-]+)/(?<domain>[^/]+)/(?<path>.*) {
 		rewrite ^/${RESIZE_PATH:_resize}/[\d-]+x[\d-]+/[^/]+/(.*) /\$1 break;
 		proxy_pass	http://\$allowed_domain;
@@ -137,7 +140,7 @@ ${SHARD_DOMAINS}
 		proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
 		${HIDE_PROXY_HEADERS}
 	}
-	
+
 	location @error {
 		proxy_pass http://${ORIGIN};
 		proxy_set_header Host ${BACKEND};
@@ -148,7 +151,7 @@ ${SHARD_DOMAINS}
 		pagespeed off;
 	}
 
-	# reverse proxy to backend	
+	# reverse proxy to backend
 	location @proxy {
 		proxy_pass http://${ORIGIN};
 		proxy_set_header Host ${BACKEND};
@@ -161,7 +164,7 @@ ${SHARD_DOMAINS}
 		${HIDE_BACKEND_HEADERS}
 		${NGINX_CUSTOM_OPTIONS}
 	}
-	
+
 	location ~^/${PROXY_PATH:-_assets}/plain/(?<domain>[^/]+)/ {
 		if (\$request_method !~ ^(GET|HEAD)) {return 444;}
 		rewrite ^/${PROXY_PATH:-_assets}/plain/[^/]+/(.*) /\$1 break;
@@ -186,7 +189,7 @@ ${SHARD_DOMAINS}
 		error_page 301 302 307 =200 @redirect;
 		${HIDE_PROXY_HEADERS}
 	}
-	
+
 	location ~(${FOLLOW_REDIRECTS:-^/not/a/valid/path,hopefully}) {
 		proxy_pass http://${ORIGIN};
 		proxy_set_header Host ${BACKEND};
@@ -197,7 +200,7 @@ ${SHARD_DOMAINS}
 		error_page 301 302 307 =200 @redirect;
 		proxy_redirect ~^/(.+)\$ ${FRONTEND}/\$1;
 		${HIDE_BACKEND_HEADERS}
-	}	
+	}
 
 	location / {
 		try_files \$uri  @proxy;
